@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌦️ KAIROS — Person 1 Onboarding & Survey</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cyan: '#06b6d4',
+              teal: '#14b8a6',
+              emerald: '#10b981'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- React & Babel CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased selection:bg-cyan-500 selection:text-white">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- METADATA & CONSTANTS ---
+    const PERSONA_METADATA = {
+      fitness: {
+        id: 'fitness',
+        label: 'Fitness & Athletics',
+        icon: '🏃',
+        tagline: 'Running windows, heat index, wind & UV alerts'
+      },
+      agriculture: {
+        id: 'agriculture',
+        label: 'Farming & Agriculture',
+        icon: '🌱',
+        tagline: 'Soil moisture, precipitation, frost & sowing conditions'
+      },
+      health: {
+        id: 'health',
+        label: 'Health & Sensitivities',
+        icon: '🫁',
+        tagline: 'AQI, pollen count, humidity, allergens & UV levels'
+      },
+      parent: {
+        id: 'parent',
+        label: 'Parent & Family',
+        icon: '👨‍👩‍👧',
+        tagline: 'School commute weather, rain timing & extreme safety'
+      },
+      commuter: {
+        id: 'commuter',
+        label: 'Daily Commuter',
+        icon: '🚗',
+        tagline: 'Route visibility, commute rain & fog delays'
+      },
+      beach_marine: {
+        id: 'beach_marine',
+        label: 'Beach, Surf & Marine',
+        icon: '🏄',
+        tagline: 'Wave height, tide cycles, wind & water temperature'
+      },
+      traveler: {
+        id: 'traveler',
+        label: 'Frequent Traveler',
+        icon: '✈️',
+        tagline: 'Packing suggestions, flight weather & storm advisories'
+      },
+      event_planner: {
+        id: 'event_planner',
+        label: 'Event & Outdoor Planner',
+        icon: '🎪',
+        tagline: 'Hourly rain probability, comfort index & wind gusts'
+      }
+    };
+
+    const POPULAR_CITIES = [
+      { city: 'Chennai', region: 'Tamil Nadu', country: 'India', latitude: 13.0827, longitude: 80.2707, timezone: 'Asia/Kolkata' },
+      { city: 'Bengaluru', region: 'Karnataka', country: 'India', latitude: 12.9716, longitude: 77.5946, timezone: 'Asia/Kolkata' },
+      { city: 'New Delhi', region: 'Delhi', country: 'India', latitude: 28.6139, longitude: 77.2090, timezone: 'Asia/Kolkata' },
+      { city: 'Mumbai', region: 'Maharashtra', country: 'India', latitude: 19.0760, longitude: 72.8777, timezone: 'Asia/Kolkata' },
+      { city: 'Hyderabad', region: 'Telangana', country: 'India', latitude: 17.3850, longitude: 78.4867, timezone: 'Asia/Kolkata' },
+      { city: 'Ludhiana', region: 'Punjab', country: 'India', latitude: 30.9010, longitude: 75.8573, timezone: 'Asia/Kolkata' }
+    ];
+
+    const DEMO_PRESETS = [
+      {
+        id: 'farmer',
+        name: '🌱 Farmer / Agriculture',
+        subtitle: 'Wheat sowing in Punjab (Agromet Focus)',
+        badge: 'Agromet Focus',
+        color: 'border-lime-500/40 bg-lime-500/10 text-lime-400',
+        data: {
+          selectedPersonas: ['agriculture', 'parent'],
+          activities: ['Field Irrigation', 'Pesticide Spraying', 'School Drop'],
+          activityTimes: ['early_morning', 'morning'],
+          commuteTime: '06:30',
+          commuteMode: 'two_wheeler',
+          sensitivities: { heatSensitivity: 1, aqiSensitivity: 'moderate', rainTolerance: 'high', uvAlertThreshold: 8, allergens: ['dust'] },
+          personaDetails: { cropType: 'Wheat', cropStage: 'Sowing / Germination', irrigationType: 'Canal & Tube-well', fitnessType: 'Walking', targetWorkoutWindow: '05:30 - 07:00', maxHeatToleranceC: 38, waterSport: 'None', maxWaveHeightM: 1.0, childrenSchoolDeparture: '07:30', strollerWalkPreferredTime: '17:30' },
+          location: { city: 'Ludhiana', region: 'Punjab', country: 'India', latitude: 30.9010, longitude: 75.8573, timezone: 'Asia/Kolkata' },
+          language: 'hi',
+          unitSystem: 'metric',
+          freeformNotes: 'Sowing wheat this week. Need early frost alerts and heavy rain warnings before fertilizer application.'
+        }
+      },
+      {
+        id: 'fitness',
+        name: '🏃 Fitness Runner',
+        subtitle: 'Morning 10k runner in coastal Chennai',
+        badge: 'Heat & UV Alert',
+        color: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400',
+        data: {
+          selectedPersonas: ['fitness', 'health'],
+          activities: ['Road Running (10K)', 'Cycling', 'Outdoor Stretch'],
+          activityTimes: ['early_morning'],
+          commuteTime: '08:45',
+          commuteMode: 'car',
+          sensitivities: { heatSensitivity: 3, aqiSensitivity: 'sensitive', rainTolerance: 'low', uvAlertThreshold: 6, allergens: ['humidity', 'dust'] },
+          personaDetails: { cropType: '', cropStage: '', irrigationType: '', fitnessType: 'Road Running (10K)', targetWorkoutWindow: '05:30 - 07:00', maxHeatToleranceC: 32, waterSport: 'Swimming', maxWaveHeightM: 1.2, childrenSchoolDeparture: '08:00', strollerWalkPreferredTime: '18:00' },
+          location: { city: 'Chennai', region: 'Tamil Nadu', country: 'India', latitude: 13.0827, longitude: 80.2707, timezone: 'Asia/Kolkata' },
+          language: 'en',
+          unitSystem: 'metric',
+          freeformNotes: 'High humidity makes running dangerous above 30°C. Need the ideal morning running window before heat peaks.'
+        }
+      },
+      {
+        id: 'health_sensitive',
+        name: '🫁 Health & Asthma',
+        subtitle: 'Air quality sensitive in Delhi NCR',
+        badge: 'AQI Priority',
+        color: 'border-rose-500/40 bg-rose-500/10 text-rose-400',
+        data: {
+          selectedPersonas: ['health', 'commuter'],
+          activities: ['Office Commute', 'Evening Walk'],
+          activityTimes: ['morning', 'evening'],
+          commuteTime: '08:30',
+          commuteMode: 'metro',
+          sensitivities: { heatSensitivity: 2, aqiSensitivity: 'sensitive', rainTolerance: 'medium', uvAlertThreshold: 5, allergens: ['pollen', 'dust', 'humidity', 'cold'] },
+          personaDetails: { cropType: '', cropStage: '', irrigationType: '', fitnessType: 'Brisk Walking', targetWorkoutWindow: '18:00 - 19:00', maxHeatToleranceC: 34, waterSport: 'None', maxWaveHeightM: 1.0, childrenSchoolDeparture: '08:00', strollerWalkPreferredTime: '17:00' },
+          location: { city: 'New Delhi', region: 'Delhi', country: 'India', latitude: 28.6139, longitude: 77.2090, timezone: 'Asia/Kolkata' },
+          language: 'en',
+          unitSystem: 'metric',
+          freeformNotes: 'Severe pollen allergy and asthma trigger when PM2.5/AQI exceeds 80 or sudden temperature drops occur.'
+        }
+      },
+      {
+        id: 'parent_commuter',
+        name: '👨‍👩‍👧 Commuter Parent',
+        subtitle: '7:30 AM scooter school drop in Bengaluru',
+        badge: 'Commute & Safety',
+        color: 'border-amber-500/40 bg-amber-500/10 text-amber-400',
+        data: {
+          selectedPersonas: ['parent', 'commuter', 'event_planner'],
+          activities: ['School Drop-off', 'Motorcycle Commute', 'Weekend Playground'],
+          activityTimes: ['morning', 'evening', 'afternoon'],
+          commuteTime: '07:30',
+          commuteMode: 'two_wheeler',
+          sensitivities: { heatSensitivity: 2, aqiSensitivity: 'moderate', rainTolerance: 'low', uvAlertThreshold: 7, allergens: ['cold', 'dust'] },
+          personaDetails: { cropType: '', cropStage: '', irrigationType: '', fitnessType: 'Walking', targetWorkoutWindow: '06:30 - 07:15', maxHeatToleranceC: 35, waterSport: 'None', maxWaveHeightM: 1.0, childrenSchoolDeparture: '07:30', strollerWalkPreferredTime: '16:30' },
+          location: { city: 'Bengaluru', region: 'Karnataka', country: 'India', latitude: 12.9716, longitude: 77.5946, timezone: 'Asia/Kolkata' },
+          language: 'en',
+          unitSystem: 'metric',
+          freeformNotes: 'Ride a scooter with a 6-year-old at 7:30 AM. Need rain radar and sudden downpour alerts 45 mins ahead.'
+        }
+      }
+    ];
+
+    const INITIAL_SURVEY_ANSWERS = {
+      selectedPersonas: ['fitness', 'health'],
+      activities: ['Road Running (10K)', 'Morning Commute'],
+      activityTimes: ['early_morning', 'morning'],
+      commuteTime: '07:30',
+      commuteMode: 'two_wheeler',
+      sensitivities: {
+        heatSensitivity: 2,
+        aqiSensitivity: 'sensitive',
+        rainTolerance: 'medium',
+        uvAlertThreshold: 6,
+        allergens: ['dust', 'humidity']
+      },
+      personaDetails: {
+        cropType: 'Wheat',
+        cropStage: 'Sowing / Germination',
+        irrigationType: 'Canal / Flood',
+        fitnessType: 'Road Running (10K)',
+        targetWorkoutWindow: '05:30 - 07:00',
+        maxHeatToleranceC: 33,
+        waterSport: 'Surfing',
+        maxWaveHeightM: 1.8,
+        childrenSchoolDeparture: '07:30',
+        strollerWalkPreferredTime: '17:00'
+      },
+      location: {
+        city: 'Chennai',
+        region: 'Tamil Nadu',
+        country: 'India',
+        latitude: 13.0827,
+        longitude: 80.2707,
+        timezone: 'Asia/Kolkata'
+      },
+      language: 'en',
+      unitSystem: 'metric',
+      freeformNotes: ''
+    };
+
+    // Simulated Person 2 AI Engine with 1.5s delay
+    async function generateProfile(surveyAnswers) {
+      await new Promise((r) => setTimeout(r, 1400));
+      const selected = surveyAnswers.selectedPersonas?.length ? surveyAnswers.selectedPersonas : ['fitness', 'health'];
+      const weights = {};
+      const personasList = [];
+
+      if (selected.length === 1) {
+        weights[selected[0]] = 1.0;
+        personasList.push({ id: selected[0], percentage: 100 });
+      } else if (selected.length === 2) {
+        weights[selected[0]] = 0.65;
+        weights[selected[1]] = 0.35;
+        personasList.push({ id: selected[0], percentage: 65 });
+        personasList.push({ id: selected[1], percentage: 35 });
+      } else {
+        weights[selected[0]] = 0.50;
+        weights[selected[1]] = 0.30;
+        personasList.push({ id: selected[0], percentage: 50 });
+        personasList.push({ id: selected[1], percentage: 30 });
+        const rest = 0.20 / (selected.length - 2);
+        for (let i = 2; i < selected.length; i++) {
+          weights[selected[i]] = parseFloat(rest.toFixed(2));
+          personasList.push({ id: selected[i], percentage: Math.round(rest * 100) });
+        }
+      }
+
+      const heatSens = surveyAnswers.sensitivities?.heatSensitivity || 2;
+      const maxTemp = heatSens === 3 ? 31 : heatSens === 2 ? 34 : 38;
+      const aqiMap = { sensitive: 55, moderate: 90, resilient: 140 };
+      const rainMap = { low: 30, medium: 50, high: 75 };
+
+      const primary = selected[0] || 'fitness';
+      let aiSummary = '';
+      if (primary === 'agriculture') aiSummary = `Prioritizing soil moisture, precipitation radar, and frost warnings for ${surveyAnswers.personaDetails?.cropType || 'crops'} during ${surveyAnswers.personaDetails?.cropStage || 'growth'}.`;
+      else if (primary === 'fitness') aiSummary = `Optimizing for peak outdoor training windows (${surveyAnswers.personaDetails?.targetWorkoutWindow || 'morning'}) with active thermal index & UV triggers.`;
+      else if (primary === 'health') aiSummary = `Monitoring high-precision AQI, airborne allergen spikes, and humidity swings to safeguard respiratory health.`;
+      else aiSummary = `Tracking commute weather, visibility conditions, and sudden downpours for safe transit at ${surveyAnswers.commuteTime || '7:30 AM'}.`;
+
+      return {
+        id: `user_${Date.now()}`,
+        primary_persona: primary,
+        personas: personasList,
+        persona_weights: weights,
+        thresholds: {
+          aqi_alert: aqiMap[surveyAnswers.sensitivities?.aqiSensitivity] || 80,
+          uv_alert: surveyAnswers.sensitivities?.uvAlertThreshold || 6,
+          max_temp_alert: maxTemp,
+          rain_prob_alert: rainMap[surveyAnswers.sensitivities?.rainTolerance] || 45
+        },
+        location: surveyAnswers.location,
+        language: surveyAnswers.language || 'en',
+        ai_summary: aiSummary,
+        raw_survey: surveyAnswers
+      };
+    }
+
+    // --- COMPONENTS ---
+
+    function ProgressBar({ currentStep, totalSteps = 6, onBack }) {
+      const labels = ['Personas', 'Routine', 'Sensitivities', 'Details', 'Location', 'Preferences'];
+      const pct = Math.round((currentStep / totalSteps) * 100);
+      return (
+        <div className="w-full max-w-3xl mx-auto mb-8 space-y-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={onBack}
+              className="text-xs font-semibold text-slate-400 hover:text-cyan-300 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 cursor-pointer"
+            >
+              ← Back
+            </button>
+            <div className="text-xs font-bold text-cyan-400 uppercase tracking-wider">
+              Step {currentStep} of {totalSteps} <span className="text-slate-500">({labels[currentStep - 1]})</span>
+            </div>
+          </div>
+          <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700/50">
+            <div className="h-full bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [stage, setStage] = useState('welcome'); // welcome | survey | processing | confirm | done
+      const [surveyStep, setSurveyStep] = useState(1);
+      const [answers, setAnswers] = useState(INITIAL_SURVEY_ANSWERS);
+      const [profile, setProfile] = useState(null);
+
+      const update = (patch) => setAnswers((prev) => ({ ...prev, ...patch }));
+
+      const runAI = async (ans) => {
+        setStage('processing');
+        const p = await generateProfile(ans);
+        setProfile(p);
+        setStage('confirm');
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center px-4 py-8">
+          <div className="max-w-4xl w-full mx-auto">
+            {/* WELCOME */}
+            {stage === 'welcome' && (
+              <div className="text-center space-y-8 py-10">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-medium text-cyan-300">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                  🌦️ KAIROS WEATHER INTELLIGENCE
+                </div>
+                <div className="space-y-4">
+                  <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white">
+                    Weather tailored to <br />
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">
+                      who you are & what you do.
+                    </span>
+                  </h1>
+                  <p className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto">
+                    KAIROS prioritizes what matters to <em>your</em> routine, crops, workouts, and health instead of generic numbers.
+                  </p>
+                </div>
+
+                <div>
+                  <button
+                    onClick={() => { setSurveyStep(1); setStage('survey'); }}
+                    className="px-8 py-4 rounded-xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-xl shadow-cyan-500/25 transition cursor-pointer"
+                  >
+                    Start 6-Step Onboarding →
+                  </button>
+                </div>
+
+                <div className="pt-8 border-t border-slate-800/80">
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">
+                    ⚡ Quick-Start Demo Presets (1-Click Hackathon Evaluation)
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
+                    {DEMO_PRESETS.map((dp) => (
+                      <button
+                        key={dp.id}
+                        onClick={() => { setAnswers(dp.data); runAI(dp.data); }}
+                        className={`p-4 rounded-2xl border transition-all text-left bg-slate-900/60 hover:bg-slate-800 cursor-pointer ${dp.color}`}
+                      >
+                        <div className="text-xs font-bold uppercase tracking-wider mb-1">{dp.badge}</div>
+                        <div className="font-semibold text-slate-100 text-sm">{dp.name}</div>
+                        <div className="text-xs text-slate-400 mt-1">{dp.subtitle}</div>
+                        <div className="mt-3 text-xs font-semibold text-cyan-400">Load Profile →</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SURVEY STEPS */}
+            {stage === 'survey' && (
+              <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-xl">
+                <ProgressBar
+                  currentStep={surveyStep}
+                  onBack={() => {
+                    if (surveyStep > 1) setSurveyStep(surveyStep - 1);
+                    else setStage('welcome');
+                  }}
+                />
+
+                {/* STEP 1: PERSONAS */}
+                {surveyStep === 1 && (
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <h2 className="text-2xl sm:text-3xl font-bold text-white">What describes your lifestyle & needs?</h2>
+                      <p className="text-xs sm:text-sm text-slate-400">Select one or more personas.</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {Object.values(PERSONA_METADATA).map((m) => {
+                        const isSel = answers.selectedPersonas.includes(m.id);
+                        return (
+                          <div
+                            key={m.id}
+                            onClick={() => {
+                              if (isSel && answers.selectedPersonas.length > 1) {
+                                update({ selectedPersonas: answers.selectedPersonas.filter(x => x !== m.id) });
+                              } else if (!isSel) {
+                                update({ selectedPersonas: [...answers.selectedPersonas, m.id] });
+                              }
+                            }}
+                            className={`p-4 rounded-2xl border transition cursor-pointer flex items-center justify-between ${
+                              isSel ? 'bg-slate-900 border-cyan-400 shadow-lg shadow-cyan-950/40 ring-1 ring-cyan-400' : 'bg-slate-950/40 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-3xl">{m.icon}</span>
+                              <div>
+                                <h3 className="font-semibold text-sm text-slate-100">{m.label}</h3>
+                                <p className="text-xs text-slate-400">{m.tagline}</p>
+                              </div>
+                            </div>
+                            <div className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold ${isSel ? 'bg-cyan-400 text-slate-950' : 'border border-slate-700'}`}>
+                              {isSel ? '✓' : ''}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="pt-4 flex justify-end border-t border-slate-800">
+                      <button
+                        onClick={() => setSurveyStep(2)}
+                        className="px-6 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 cursor-pointer"
+                      >
+                        Continue to Routine →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 2: ROUTINE */}
+                {surveyStep === 2 && (
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <h2 className="text-2xl sm:text-3xl font-bold text-white">Daily Routine & Active Windows</h2>
+                      <p className="text-xs sm:text-sm text-slate-400">When are you outdoors?</p>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {[
+                        { id: 'early_morning', label: '🌅 Early (5–8 AM)' },
+                        { id: 'morning', label: '☀️ Morning (8–11:30 AM)' },
+                        { id: 'afternoon', label: '🔥 Midday (12–4 PM)' },
+                        { id: 'evening', label: '🌆 Evening (4:30–8 PM)' }
+                      ].map((t) => {
+                        const sel = answers.activityTimes.includes(t.id);
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => {
+                              update({
+                                activityTimes: sel ? answers.activityTimes.filter(x => x !== t.id) : [...answers.activityTimes, t.id]
+                              });
+                            }}
+                            className={`p-3 rounded-xl border text-xs font-semibold cursor-pointer ${sel ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200' : 'bg-slate-950/40 border-slate-800 text-slate-400'}`}
+                          >
+                            {t.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800 space-y-2">
+                        <label className="text-xs font-bold text-slate-300">⏰ Primary Commute Departure</label>
+                        <input
+                          type="time"
+                          value={answers.commuteTime}
+                          onChange={(e) => update({ commuteTime: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-sm"
+                        />
+                      </div>
+                      <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800 space-y-2">
+                        <label className="text-xs font-bold text-slate-300">🛵 Transport Mode</label>
+                        <select
+                          value={answers.commuteMode}
+                          onChange={(e) => update({ commuteMode: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-sm"
+                        >
+                          <option value="two_wheeler">Motorcycle / Scooter</option>
+                          <option value="car">Car / Cab</option>
+                          <option value="bicycle">Bicycle</option>
+                          <option value="walking">Walking</option>
+                          <option value="metro">Metro / Public Bus</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="pt-4 flex justify-end border-t border-slate-800">
+                      <button onClick={() => setSurveyStep(3)} className="px-6 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 cursor-pointer">
+                        Continue to Sensitivities →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 3: SENSITIVITIES */}
+                {surveyStep === 3 && (
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <h2 className="text-2xl sm:text-3xl font-bold text-white">Personalized Thresholds</h2>
+                      <p className="text-xs sm:text-sm text-slate-400">Calibrate your comfort limits.</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800 space-y-2">
+                        <div className="flex justify-between text-xs font-bold text-rose-300">
+                          <span>🌡️ Heat Sensitivity</span>
+                          <span>{answers.sensitivities.heatSensitivity === 3 ? 'High (>31°C)' : answers.sensitivities.heatSensitivity === 2 ? 'Normal (>34°C)' : 'Tolerant (>38°C)'}</span>
+                        </div>
+                        <input
+                          type="range" min="1" max="3" value={answers.sensitivities.heatSensitivity}
+                          onChange={(e) => update({ sensitivities: { ...answers.sensitivities, heatSensitivity: Number(e.target.value) } })}
+                          className="w-full accent-rose-400"
+                        />
+                      </div>
+                      <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800 space-y-2">
+                        <div className="text-xs font-bold text-teal-300">😷 AQI Sensitivity</div>
+                        <select
+                          value={answers.sensitivities.aqiSensitivity}
+                          onChange={(e) => update({ sensitivities: { ...answers.sensitivities, aqiSensitivity: e.target.value } })}
+                          className="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs"
+                        >
+                          <option value="sensitive">Sensitive (Alert at AQI &gt; 50 - Asthma/Elderly)</option>
+                          <option value="moderate">Moderate (Alert at AQI &gt; 100)</option>
+                          <option value="resilient">Resilient (Alert at AQI &gt; 150)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="pt-4 flex justify-end border-t border-slate-800">
+                      <button onClick={() => setSurveyStep(4)} className="px-6 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 cursor-pointer">
+                        Continue to Persona Details →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 4: MICRO QUESTIONS */}
+                {surveyStep === 4 && (
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <h2 className="text-2xl sm:text-3xl font-bold text-white">Persona Calibration</h2>
+                      <p className="text-xs sm:text-sm text-slate-400">Tailored micro-questions for your selected roles.</p>
+                    </div>
+                    {answers.selectedPersonas.includes('agriculture') && (
+                      <div className="p-4 rounded-2xl bg-lime-950/30 border border-lime-500/30 space-y-3">
+                        <div className="text-xs font-bold text-lime-400 uppercase">🌱 Agricultural Settings</div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <input
+                            type="text" placeholder="Crop (e.g. Wheat, Rice)"
+                            value={answers.personaDetails.cropType}
+                            onChange={(e) => update({ personaDetails: { ...answers.personaDetails, cropType: e.target.value } })}
+                            className="bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs"
+                          />
+                          <select
+                            value={answers.personaDetails.cropStage}
+                            onChange={(e) => update({ personaDetails: { ...answers.personaDetails, cropStage: e.target.value } })}
+                            className="bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs"
+                          >
+                            <option value="Sowing / Germination">Sowing / Germination</option>
+                            <option value="Vegetative">Vegetative</option>
+                            <option value="Flowering">Flowering</option>
+                            <option value="Harvest Ready">Harvest Ready</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                    {answers.selectedPersonas.includes('fitness') && (
+                      <div className="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-3">
+                        <div className="text-xs font-bold text-emerald-400 uppercase">🏃 Fitness Target Window</div>
+                        <select
+                          value={answers.personaDetails.targetWorkoutWindow}
+                          onChange={(e) => update({ personaDetails: { ...answers.personaDetails, targetWorkoutWindow: e.target.value } })}
+                          className="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs"
+                        >
+                          <option value="05:30 - 07:00">Early Morning (05:30 – 07:00)</option>
+                          <option value="06:30 - 08:00">Morning (06:30 – 08:00)</option>
+                          <option value="17:30 - 19:00">Evening Dusk (17:30 – 19:00)</option>
+                        </select>
+                      </div>
+                    )}
+                    <div className="pt-4 flex justify-end border-t border-slate-800">
+                      <button onClick={() => setSurveyStep(5)} className="px-6 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 cursor-pointer">
+                        Continue to Location →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 5: LOCATION */}
+                {surveyStep === 5 && (
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <h2 className="text-2xl sm:text-3xl font-bold text-white">Your Weather Location</h2>
+                      <p className="text-xs sm:text-sm text-slate-400">Open-Meteo live coordinates tracking.</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-cyan-950/30 border border-cyan-500/30 flex justify-between items-center">
+                      <div>
+                        <div className="text-xs font-bold text-cyan-400">📍 SELECTED CITY</div>
+                        <div className="text-base font-bold text-white">{answers.location.city}, {answers.location.region}</div>
+                        <div className="text-[11px] text-slate-400">Lat: {answers.location.latitude}°, Lon: {answers.location.longitude}°</div>
+                      </div>
+                      <span className="text-xs px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded font-semibold">Active</span>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-400 uppercase">Quick-Pick Cities</label>
+                      <div className="flex flex-wrap gap-2">
+                        {POPULAR_CITIES.map((c) => (
+                          <button
+                            key={c.city}
+                            onClick={() => update({ location: c })}
+                            className={`px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer ${
+                              answers.location.city === c.city ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300' : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
+                            }`}
+                          >
+                            📍 {c.city}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="pt-4 flex justify-end border-t border-slate-800">
+                      <button onClick={() => setSurveyStep(6)} className="px-6 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 cursor-pointer">
+                        Continue to Final Preferences →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 6: PREFERENCES & SUBMIT */}
+                {surveyStep === 6 && (
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <h2 className="text-2xl sm:text-3xl font-bold text-white">Language & AI Context Notes</h2>
+                      <p className="text-xs sm:text-sm text-slate-400">Advisory language & custom notes.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { code: 'en', label: '🇬🇧 English' },
+                        { code: 'hi', label: '🇮🇳 हिन्दी (Hindi)' },
+                        { code: 'ta', label: '🇮🇳 தமிழ் (Tamil)' },
+                        { code: 'te', label: '🇮🇳 తెలుగు (Telugu)' }
+                      ].map((lang) => (
+                        <button
+                          key={lang.code}
+                          onClick={() => update({ language: lang.code })}
+                          className={`p-3 rounded-xl border text-xs font-bold cursor-pointer ${
+                            answers.language === lang.code ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200' : 'bg-slate-950/40 border-slate-800 text-slate-400'
+                          }`}
+                        >
+                          {lang.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-300">Freeform Notes for AI Personalizer (Optional)</label>
+                      <textarea
+                        rows="2"
+                        value={answers.freeformNotes}
+                        onChange={(e) => update({ freeformNotes: e.target.value })}
+                        placeholder="e.g. I ride a scooter with my child at 7:30 AM and need rain warnings 45 mins before."
+                        className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                      />
+                    </div>
+                    <div className="pt-4 flex justify-between items-center border-t border-slate-800">
+                      <span className="text-xs text-slate-500">Ready to synthesize</span>
+                      <button
+                        onClick={() => runAI(answers)}
+                        className="px-8 py-3.5 rounded-xl font-extrabold text-sm bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 text-slate-950 cursor-pointer shadow-xl shadow-cyan-500/25"
+                      >
+                        Synthesize AI Weather Profile ✨
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* PROCESSING LOADING SCREEN */}
+            {stage === 'processing' && (
+              <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-12 text-center space-y-6 shadow-2xl">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-400 to-emerald-400 flex items-center justify-center text-2xl mx-auto shadow-xl shadow-cyan-500/30 animate-pulse">
+                  🌦️
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold text-white">Synthesizing Your KAIROS Weather Profile</h3>
+                  <p className="text-xs font-mono text-cyan-400 animate-pulse">Person 2 AI Engine & Open-Meteo live normalization in progress...</p>
+                </div>
+              </div>
+            )}
+
+            {/* PROFILE CONFIRMATION */}
+            {stage === 'confirm' && profile && (
+              <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 sm:p-10 space-y-6 shadow-2xl">
+                <div className="text-center space-y-1">
+                  <div className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-xs font-bold text-emerald-400">
+                    ✓ AI PROFILE SYNTHESIZED
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Review Your Weather Intelligence Profile</h2>
+                </div>
+
+                <div className="p-4 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-xs text-slate-200">
+                  <strong>AI Strategy:</strong> "{profile.ai_summary}"
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800 space-y-2">
+                    <div className="text-xs font-bold uppercase text-slate-400">Persona Weights</div>
+                    {profile.personas.map((p) => (
+                      <div key={p.id} className="space-y-1">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="capitalize">{p.id}</span>
+                          <span className="text-cyan-400">{p.percentage}%</span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                          <div className="bg-cyan-400 h-full rounded-full" style={{ width: `${p.percentage}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800 space-y-2">
+                    <div className="text-xs font-bold uppercase text-slate-400">Active Alert Thresholds</div>
+                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                      <div className="p-2 bg-slate-900 rounded border border-rose-500/20 text-rose-300">Heat &gt; {profile.thresholds.max_temp_alert}°C</div>
+                      <div className="p-2 bg-slate-900 rounded border border-teal-500/20 text-teal-300">AQI &gt; {profile.thresholds.aqi_alert}</div>
+                      <div className="p-2 bg-slate-900 rounded border border-blue-500/20 text-blue-300">Rain &gt; {profile.thresholds.rain_prob_alert}%</div>
+                      <div className="p-2 bg-slate-900 rounded border border-amber-500/20 text-amber-300">UV &ge; {profile.thresholds.uv_alert}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-slate-800">
+                  <button onClick={() => { setSurveyStep(1); setStage('survey'); }} className="text-xs text-slate-400 hover:text-white font-semibold cursor-pointer">
+                    ✏️ Edit Survey Answers
+                  </button>
+                  <button
+                    onClick={() => setStage('done')}
+                    className="px-8 py-3.5 rounded-xl font-extrabold text-sm bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 text-slate-950 cursor-pointer shadow-xl shadow-cyan-500/25"
+                  >
+                    Confirm & Launch KAIROS Homepage 🚀
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* DONE / HANDOFF PREVIEW */}
+            {stage === 'done' && profile && (
+              <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-2xl">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="text-xs font-bold text-emerald-400 uppercase">✓ Ready for Person 4</span>
+                    <h2 className="text-2xl font-bold text-white">Profile Payload Ready for Homepage</h2>
+                  </div>
+                  <button onClick={() => setStage('welcome')} className="px-3 py-1.5 bg-slate-800 text-xs rounded-lg text-slate-300 cursor-pointer">
+                    🔄 Restart
+                  </button>
+                </div>
+                <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-cyan-300 overflow-x-auto max-h-80">
+                  {JSON.stringify(profile, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
