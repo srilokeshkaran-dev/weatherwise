@@ -1,4 +1,9 @@
 import React, { useState } from "react";
+import DEFAULT_HERO_FIELDS, {
+  heroFieldsByPersona,
+  personaExplainers,
+  DEFAULT_EXPLAINER,
+} from "./heroFieldsByPersona.js";
 
 function formatNumeric(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
@@ -15,6 +20,32 @@ function formatFlag(value) {
   return String(value);
 }
 
+const ALL_FIELDS = [
+  { key: "tempC", label: "Temperature", unit: "°C", formatter: formatNumeric },
+  { key: "feelsLikeC", label: "Feels Like", unit: "°C", formatter: formatNumeric },
+  { key: "humidityPct", label: "Humidity", unit: "%", formatter: formatNumeric },
+  { key: "windKph", label: "Wind Speed", unit: "km/h", formatter: formatNumeric },
+  { key: "windDirDeg", label: "Wind Dir", unit: "°", formatter: formatNumeric },
+  { key: "uv", label: "UV Index", unit: "", formatter: formatNumeric },
+  { key: "aqi", label: "AQI", unit: "", formatter: formatNumeric },
+  { key: "pm25", label: "PM2.5", unit: "µg/m³", formatter: formatNumeric },
+  { key: "rainProbPct", label: "Rain Prob", unit: "%", formatter: formatNumeric },
+  { key: "precipMm", label: "Precipitation", unit: "mm", formatter: formatNumeric },
+  { key: "visibilityKm", label: "Visibility", unit: "km", formatter: formatNumeric },
+  { key: "soilMoisturePct", label: "Soil Moisture", unit: "%", formatter: formatNumeric, hideWhenNull: true },
+  { key: "waveM", label: "Waves", unit: "m", formatter: formatNumeric, hideWhenNull: true },
+  { key: "waterTempC", label: "Water Temp", unit: "°C", formatter: formatNumeric, hideWhenNull: true },
+  { key: "sunrise", label: "Sunrise", unit: "", formatter: formatClock },
+  { key: "sunset", label: "Sunset", unit: "", formatter: formatClock },
+  { key: "frost", label: "Frost", unit: "", formatter: formatFlag, hideWhenNull: true },
+  { key: "fog", label: "Fog", unit: "", formatter: formatFlag, hideWhenNull: true },
+];
+
+const FIELD_MAP = ALL_FIELDS.reduce((acc, f) => {
+  acc[f.key] = f;
+  return acc;
+}, {});
+
 function getProportion(label, numericVal) {
   if (numericVal === null || numericVal === undefined || Number.isNaN(numericVal)) return 0;
   const num = Number(numericVal);
@@ -26,6 +57,18 @@ function getProportion(label, numericVal) {
   }
   if (label.includes("UV")) {
     return Math.min(Math.max(num / 12, 0), 1);
+  }
+  if (label.includes("Humidity") || label.includes("Rain") || label.includes("Moisture")) {
+    return Math.min(Math.max(num / 100, 0), 1);
+  }
+  if (label.includes("Wind")) {
+    return Math.min(Math.max(num / 100, 0), 1);
+  }
+  if (label.includes("PM2.5")) {
+    return Math.min(Math.max(num / 250, 0), 1);
+  }
+  if (label.includes("Visibility")) {
+    return Math.min(Math.max(num / 20, 0), 1);
   }
   return 0.5;
 }
@@ -119,67 +162,62 @@ export function StatChip({ label, value, rawValue, unit = "", variant = "standar
   );
 }
 
-export default function StatGrid({ reading }) {
+export default function StatGrid({ profile, reading }) {
   if (!reading) return null;
+
+  const topPersonaId = profile?.personas?.[0]?.id;
+  const heroKeys = (topPersonaId && heroFieldsByPersona[topPersonaId]) || DEFAULT_HERO_FIELDS;
+  const explainerText = (topPersonaId && personaExplainers[topPersonaId]) || DEFAULT_EXPLAINER;
+
+  const heroFields = heroKeys
+    .map((key) => FIELD_MAP[key])
+    .filter(Boolean);
+
+  const standardFields = ALL_FIELDS.filter((f) => !heroKeys.includes(f.key));
 
   return (
     <div className="space-y-4">
       {/* Hero Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatChip
-          label="Temperature"
-          value={formatNumeric(reading.tempC)}
-          rawValue={reading.tempC}
-          unit="°C"
-          variant="hero"
-        />
-        <StatChip
-          label="Feels Like"
-          value={formatNumeric(reading.feelsLikeC)}
-          rawValue={reading.feelsLikeC}
-          unit="°C"
-          variant="hero"
-        />
-        <StatChip
-          label="AQI"
-          value={formatNumeric(reading.aqi)}
-          rawValue={reading.aqi}
-          variant="hero"
-        />
-        <StatChip
-          label="UV Index"
-          value={formatNumeric(reading.uv)}
-          rawValue={reading.uv}
-          variant="hero"
-        />
+        {heroFields.map((f) => {
+          const val = reading[f.key];
+          if (f.hideWhenNull && (val === null || val === undefined)) {
+            return null;
+          }
+          return (
+            <StatChip
+              key={f.key}
+              label={f.label}
+              value={f.formatter(val)}
+              rawValue={val}
+              unit={f.unit}
+              variant="hero"
+            />
+          );
+        })}
       </div>
+
+      {/* Hero Explainer */}
+      <p className="text-xs font-medium text-[#8B93A1]">
+        {explainerText}
+      </p>
 
       {/* Standard Stats */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-        <StatChip label="Humidity" value={formatNumeric(reading.humidityPct)} unit="%" />
-        <StatChip label="Wind Speed" value={formatNumeric(reading.windKph)} unit="km/h" />
-        <StatChip label="Wind Dir" value={formatNumeric(reading.windDirDeg)} unit="°" />
-        <StatChip label="PM2.5" value={formatNumeric(reading.pm25)} unit="µg/m³" />
-        <StatChip label="Rain Prob" value={formatNumeric(reading.rainProbPct)} unit="%" />
-        <StatChip label="Precipitation" value={formatNumeric(reading.precipMm)} unit="mm" />
-        <StatChip label="Visibility" value={formatNumeric(reading.visibilityKm)} unit="km" />
-        {reading.soilMoisturePct !== null && reading.soilMoisturePct !== undefined ? (
-          <StatChip label="Soil Moisture" value={formatNumeric(reading.soilMoisturePct)} unit="%" />
-        ) : null}
-        {reading.waveM !== null && reading.waveM !== undefined ? (
-          <StatChip label="Waves" value={formatNumeric(reading.waveM)} unit="m" />
-        ) : null}
-        {reading.waterTempC !== null && reading.waterTempC !== undefined ? (
-          <StatChip label="Water Temp" value={formatNumeric(reading.waterTempC)} unit="°C" />
-        ) : null}
-        <StatChip label="Sunrise" value={formatClock(reading.sunrise)} />
-        <StatChip label="Sunset" value={formatClock(reading.sunset)} />
-        {reading.frost !== null && reading.frost !== undefined ? (
-          <StatChip label="Frost" value={formatFlag(reading.frost)} />
-        ) : null}
-        {reading.fog !== null && reading.fog !== undefined ? (
-          <StatChip label="Fog" value={formatFlag(reading.fog)} />
-        ) : null}
+        {standardFields.map((f) => {
+          const val = reading[f.key];
+          if (f.hideWhenNull && (val === null || val === undefined)) {
+            return null;
+          }
+          return (
+            <StatChip
+              key={f.key}
+              label={f.label}
+              value={f.formatter(val)}
+              unit={f.unit}
+            />
+          );
+        })}
       </div>
     </div>
   );

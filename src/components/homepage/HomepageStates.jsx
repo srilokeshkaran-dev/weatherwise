@@ -5,6 +5,16 @@ import StatGrid from "./StatGrid.jsx";
 import ForecastStrip from "./ForecastStrip.jsx";
 import WeatherBackground from "./WeatherBackground.jsx";
 
+const PERSONA_ICONS = {
+  fitness: "🏃",
+  health: "🫁",
+  farmer: "🌾",
+  parent: "🎒",
+  commuter: "🚗",
+  outdoor: "🌲",
+  elderly: "👵",
+};
+
 function formatNumeric(value) {
   if (value === null || Number.isNaN(value)) return "—";
   return String(value);
@@ -98,7 +108,7 @@ export default function HomepageStates({
 }) {
   if (status === "loading" && reading === null) {
     return (
-      <div className="space-y-4 p-6 text-left">
+      <div className="relative space-y-4 p-6 text-left">
         <Header onRefresh={onRefresh} onOpenSettings={onOpenSettings} />
         <Skeleton />
       </div>
@@ -110,7 +120,7 @@ export default function HomepageStates({
 
   if (hardError) {
     return (
-      <div className="space-y-4 p-6 text-left">
+      <div className="relative space-y-4 p-6 text-left">
         <Header onRefresh={onRefresh} onOpenSettings={onOpenSettings} />
         {staleBanner}
         <FullError message={reading.error.message} onRetry={onRefresh} />
@@ -120,7 +130,7 @@ export default function HomepageStates({
 
   if (reading == null) {
     return (
-      <div className="space-y-4 p-6 text-left">
+      <div className="relative space-y-4 p-6 text-left">
         <Header onRefresh={onRefresh} onOpenSettings={onOpenSettings} />
         <Skeleton />
       </div>
@@ -129,6 +139,11 @@ export default function HomepageStates({
 
   const alerts = insights?.alerts ?? [];
   const locationName = profile?.locations?.[0]?.name ?? null;
+  const topPersona = profile?.personas?.[0];
+  const personaIcon = topPersona?.id ? PERSONA_ICONS[topPersona.id] || "👤" : null;
+  const personaName = topPersona?.id
+    ? topPersona.id.charAt(0).toUpperCase() + topPersona.id.slice(1)
+    : null;
 
   return (
     <div className="relative min-h-screen bg-[#0B0F14] p-6 text-left text-[#E8ECF1]">
@@ -140,13 +155,24 @@ export default function HomepageStates({
           {locationName !== null ? <p className="text-sm font-medium text-[#E8ECF1]">{locationName}</p> : null}
           {insights?.source === "rules" ? <OfflineChip /> : null}
         </div>
+        {topPersona?.id ? (
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-[#3EA8B8]/30 bg-[#3EA8B8]/10 px-3 py-1 text-xs font-medium text-[#3EA8B8] shadow-sm">
+            <span>{personaIcon}</span>
+            <span>
+              Personalized for {personaName}
+              {topPersona.weight !== undefined && topPersona.weight !== null
+                ? ` · ${topPersona.weight}%`
+                : ""}
+            </span>
+          </div>
+        ) : null}
         <Spotlight headline={insights?.headline} alerts={alerts} />
+        <InsightCardList cards={insights?.cards ?? []} />
         <p className="text-xs font-medium uppercase tracking-wider text-[#8B93A1]">
           condition: <span className="capitalize text-[#E8ECF1]">{reading.condition}</span>
         </p>
-        <StatGrid reading={reading} />
+        <StatGrid profile={profile} reading={reading} />
         <AlertList alerts={alerts} />
-        <InsightCardList cards={insights?.cards ?? []} />
         <ForecastStrip forecast={reading.forecast ?? []} />
       </div>
     </div>

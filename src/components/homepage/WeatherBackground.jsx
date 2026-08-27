@@ -1,6 +1,44 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 export default function WeatherBackground({ condition }) {
+  const particleData = useMemo(() => {
+    if (!condition || condition === "unknown") return [];
+
+    let count = 0;
+    let baseDuration = 0;
+
+    if (condition === "drizzle") {
+      count = 10;
+      baseDuration = 2.5;
+    } else if (condition === "rain") {
+      count = 18;
+      baseDuration = 1.5;
+    } else if (condition === "heavy_rain" || condition === "thunderstorm") {
+      count = 28;
+      baseDuration = 0.8;
+    } else if (condition === "snow") {
+      count = 16;
+      baseDuration = 8.0;
+    } else {
+      return [];
+    }
+
+    return Array.from({ length: count }, () => {
+      const left = Math.random() * 100;
+      const durationVariation = Math.random() * 0.8 - 0.4;
+      const animationDuration = Math.max(0.2, baseDuration + durationVariation);
+      const animationDelay = Math.random() * animationDuration;
+      const top = -Math.random() * 20;
+
+      return {
+        left: `${left.toFixed(2)}%`,
+        animationDelay: `${animationDelay.toFixed(2)}s`,
+        animationDuration: `${animationDuration.toFixed(2)}s`,
+        top: `${top.toFixed(2)}%`,
+      };
+    });
+  }, [condition]);
+
   if (!condition || condition === "unknown") return null;
 
   return (
@@ -13,17 +51,19 @@ export default function WeatherBackground({ condition }) {
       {/* Cloud Conditions */}
       {(condition === "partly_cloudy" || condition === "cloudy") && (
         <div className="animate-cloud-drift absolute inset-0">
-          <div className="absolute top-10 -left-10 h-64 w-96 rounded-full bg-[#2A3441]/30 blur-3xl" />
-          <div className="absolute top-40 right-0 h-72 w-[30rem] rounded-full bg-[#151B24]/40 blur-3xl" />
+          <div className="absolute top-10 -left-10 h-64 w-96 rounded-full bg-[#4A5A6E]/30 blur-3xl" />
+          <div className="absolute top-40 right-0 h-72 w-[30rem] rounded-full bg-[#4A5A6E]/40 blur-3xl" />
           {condition === "cloudy" && (
-            <div className="absolute top-24 left-1/3 h-80 w-80 rounded-full bg-[#2A3441]/25 blur-3xl" />
+            <div className="absolute top-24 left-1/3 h-80 w-80 rounded-full bg-[#4A5A6E]/25 blur-3xl" />
           )}
         </div>
       )}
 
       {/* Fog Condition */}
       {condition === "fog" && (
-        <div className="absolute inset-x-0 top-1/4 h-64 bg-gradient-to-r from-transparent via-[#2A3441]/35 to-transparent blur-2xl" />
+        <div className="animate-cloud-drift absolute inset-0">
+          <div className="absolute inset-0 bg-[#8B93A1]/15 blur-2xl" />
+        </div>
       )}
 
       {/* Rain / Drizzle / Heavy Rain / Thunderstorm Conditions */}
@@ -35,14 +75,7 @@ export default function WeatherBackground({ condition }) {
           {condition === "thunderstorm" && (
             <div className="animate-lightning absolute inset-0 bg-[#E8ECF1]/10" />
           )}
-          {Array.from({
-            length:
-              condition === "drizzle"
-                ? 10
-                : condition === "rain"
-                ? 18
-                : 28,
-          }).map((_, i) => (
+          {particleData.map((p, i) => (
             <div
               key={i}
               className={`absolute w-[1.5px] rounded-full bg-[#3EA8B8] ${
@@ -53,9 +86,10 @@ export default function WeatherBackground({ condition }) {
                   : "h-16 animate-rain-fast"
               }`}
               style={{
-                left: `${(i * 100) / (condition === "drizzle" ? 10 : condition === "rain" ? 18 : 28)}%`,
-                animationDelay: `${(i * 0.2).toFixed(1)}s`,
-                top: `-${Math.random() * 20}%`,
+                left: p.left,
+                animationDelay: p.animationDelay,
+                animationDuration: p.animationDuration,
+                top: p.top,
               }}
             />
           ))}
@@ -65,13 +99,14 @@ export default function WeatherBackground({ condition }) {
       {/* Snow Condition */}
       {condition === "snow" && (
         <div className="absolute inset-0 opacity-40">
-          {Array.from({ length: 16 }).map((_, i) => (
+          {particleData.map((p, i) => (
             <div
               key={i}
               className="animate-snow-slow absolute h-2 w-2 rounded-full bg-[#E8ECF1]"
               style={{
-                left: `${(i * 100) / 16}%`,
-                animationDelay: `${(i * 0.4).toFixed(1)}s`,
+                left: p.left,
+                animationDelay: p.animationDelay,
+                animationDuration: p.animationDuration,
                 top: "-10px",
               }}
             />

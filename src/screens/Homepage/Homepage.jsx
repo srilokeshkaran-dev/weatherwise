@@ -1,5 +1,5 @@
 import HomepageStates from "../../components/homepage/HomepageStates.jsx";
-import { EMPTY_READING, ERROR_CODES } from "../../contracts";
+import { CONDITIONS, EMPTY_READING, ERROR_CODES } from "../../contracts";
 import { mockInsights, mockReading } from "../../data/mockData";
 
 const UNKNOWN_CONDITION = EMPTY_READING.condition;
@@ -94,12 +94,23 @@ export default function Homepage({
   let nextStatus = status;
 
   if (import.meta.env.DEV) {
-    const testState = new URLSearchParams(window.location.search).get("testState");
+    const searchParams = new URLSearchParams(window.location.search);
+    const testState = searchParams.get("testState");
     if (testState) {
       const overridden = applyDevTestState(testState, reading, insights, status);
       nextReading = overridden.reading;
       nextInsights = overridden.insights;
       nextStatus = overridden.status;
+    }
+
+    const testCondition = searchParams.get("testCondition");
+    if (testCondition && CONDITIONS.includes(testCondition)) {
+      if (nextReading) {
+        nextReading = {
+          ...nextReading,
+          condition: testCondition,
+        };
+      }
     }
   }
 

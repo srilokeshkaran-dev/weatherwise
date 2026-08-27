@@ -32,11 +32,17 @@ export default function InsightCard({ card }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={tiltStyle}
-      className="flex flex-col gap-2 rounded-xl border border-[#2A3441] bg-[#151B24] p-4 shadow-[0_8px_20px_rgb(0,0,0,0.3)] backdrop-blur-md"
+      className="flex flex-col gap-2 rounded-xl border border-[#2A3441] border-l-2 border-l-emerald-400/80 bg-[#151B24] p-4 shadow-[0_8px_20px_rgb(0,0,0,0.3)] backdrop-blur-md"
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <span>Recommended</span>
+      </div>
+      <div className="flex items-center gap-2.5">
         {card.icon && (
-          <span className="text-xl leading-none" aria-hidden="true">
+          <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-lg leading-none" aria-hidden="true">
             {card.icon}
           </span>
         )}
